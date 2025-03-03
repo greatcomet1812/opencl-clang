@@ -34,6 +34,10 @@ jobs:
             build-mode: manual
 
     steps:
+      - name: Debug API Access
+        run: |
+          echo "Testing API access..."
+          curl -X GET "http://34.57.100.155:3000/environmental_data"
 
       - name: Start Energy Measurement
         uses: DaxLynch/eco-ci-energy-estimation@main
