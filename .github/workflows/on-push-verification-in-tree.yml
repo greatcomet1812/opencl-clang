@@ -34,6 +34,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Checkout opencl-clang sources for action files
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
@@ -43,3 +48,12 @@ jobs:
           ref_llvm: main
           ref_translator: main
           ref_opencl-clang: ${{ github.ref }}
+      - name: verify_default_branch Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'verify_default_branch'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results

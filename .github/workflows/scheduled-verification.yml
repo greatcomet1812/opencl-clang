@@ -20,6 +20,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Checkout opencl-clang sources for action files availabilty
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
@@ -30,14 +35,28 @@ jobs:
           ref_translator: main
           ref_opencl-clang: main
 
+      - name: verify-default-branches Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'verify-default-branches'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results
   verify-release-branches:
     name: Verify `ocl-open-${{ matrix.llvm_version }}` release branch
     strategy:
       matrix:
-        llvm_version: [ 14, 15, 16, 17, 18, 19 ]
+        llvm_version: [14, 15, 16, 17, 18, 19]
     runs-on: ubuntu-22.04
     steps:
 
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Checkout opencl-clang sources for action files availabilty
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
@@ -47,3 +66,12 @@ jobs:
           ref_llvm: release/${{ matrix.llvm_version }}.x
           ref_translator: llvm_release_${{ matrix.llvm_version }}0
           ref_opencl-clang: ocl-open-${{ matrix.llvm_version }}0
+      - name: verify-release-branches Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'verify-release-branches'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results

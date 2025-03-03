@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -30,11 +30,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: c-cpp
-          build-mode: manual
+          - language: c-cpp
+            build-mode: manual
 
     steps:
 
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Install llvm and its dependencies
         run: |
           curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
@@ -98,3 +103,12 @@ jobs:
         uses: github/codeql-action/analyze@f079b8493333aace61c81488f8bd40919487bd9f # v3.25.7
         with:
           category: "/language:${{matrix.language}}"
+      - name: analyze Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'analyze'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results

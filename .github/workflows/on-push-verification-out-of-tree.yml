@@ -34,6 +34,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Install llvm and its dependencies
         run: |
           curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
@@ -87,3 +92,12 @@ jobs:
             -DSPIRV_TRANSLATOR_DIR=${{ env.spirv-translator-dir }} \
             -DCMAKE_BUILD_TYPE=Release
           cmake --build . -j $(nproc)
+      - name: verify_default_branch Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'verify_default_branch'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results

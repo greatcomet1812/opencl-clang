@@ -16,10 +16,15 @@ jobs:
       latest_branch: ${{steps.latest_branch.outputs.latest_branch}}
       branches_json: ${{steps.release_branches.outputs.branches_json}}
     steps:
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Checkout
         uses: actions/checkout@v4
         with:
-            fetch-depth: 0
+          fetch-depth: 0
       - name: Get latest llvm_release branch
         id: latest_branch
         run: |
@@ -39,6 +44,15 @@ jobs:
           | paste -sd',' \
           | xargs -0 -d"\n" printf 'branches_json={"branch":[%s]}' \
           >> $GITHUB_OUTPUT
+      - name: setup Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'setup'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results
   release:
     permissions:
       # required by softprops/action-gh-release to create a release
@@ -48,28 +62,33 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.setup.outputs.branches_json)}}
     steps:
+      - name: Start Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: start-measurement
+          api-endpoint-add: ${{ secrets.ECOCI_API }}
       - name: Checkout
         uses: actions/checkout@v4
         with:
-            ref: ${{ matrix.branch }}
-            fetch-depth: 0
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
       - name: Get commits info
         id: versions
         run: |
-            export LATEST_VERSION=\
-            "$(git describe --tags --abbrev=0 --match 'v*')"
-            export LLVM_VERSION=$(echo $LATEST_VERSION \
-            | sed -E 's/v([0-9]+\.[0-9]+)\.([0-9]+).*/\1/')
-            export PATCH=$(echo $LATEST_VERSION \
-            | sed -E 's/(v[0-9]+\.[0-9]+)\.([0-9]+).*/\2/')
-            echo "llvm_version=$LLVM_VERSION" >> $GITHUB_OUTPUT
-            echo "patch=$PATCH" >> $GITHUB_OUTPUT
-            echo "latest_version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
-            echo "release_version=${LLVM_VERSION}.$((${PATCH}+1))" \
-            >> $GITHUB_OUTPUT
-            git rev-list ${LATEST_VERSION}..HEAD --count \
-            | xargs printf "commits_since_last_release=%d\n" >> $GITHUB_OUTPUT
-            git rev-parse HEAD | xargs printf "last_commit=%s\n" >> $GITHUB_OUTPUT
+          export LATEST_VERSION=\
+          "$(git describe --tags --abbrev=0 --match 'v*')"
+          export LLVM_VERSION=$(echo $LATEST_VERSION \
+          | sed -E 's/v([0-9]+\.[0-9]+)\.([0-9]+).*/\1/')
+          export PATCH=$(echo $LATEST_VERSION \
+          | sed -E 's/(v[0-9]+\.[0-9]+)\.([0-9]+).*/\2/')
+          echo "llvm_version=$LLVM_VERSION" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
+          echo "latest_version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
+          echo "release_version=${LLVM_VERSION}.$((${PATCH}+1))" \
+          >> $GITHUB_OUTPUT
+          git rev-list ${LATEST_VERSION}..HEAD --count \
+          | xargs printf "commits_since_last_release=%d\n" >> $GITHUB_OUTPUT
+          git rev-parse HEAD | xargs printf "last_commit=%s\n" >> $GITHUB_OUTPUT
       - name: Get SPIRV-LLVM-Translator and llvm-project latest tags
         id: llvm-spirv-versions
         run: |
@@ -99,23 +118,30 @@ jobs:
         with:
             # Setting tag to have format:
             # %latest llvm version%.%latest patch + 1%
-            tag_name: v${{ steps.versions.outputs.release_version }}
+          tag_name: v${{ steps.versions.outputs.release_version }}
             # We have to set this so tag is set on the branch we are releasing
-            target_commitish: ${{ steps.versions.outputs.last_commit }}
+          target_commitish: ${{ steps.versions.outputs.last_commit }}
             # We don't want to mark patch releases latest unless it is latest
             # major version
-            make_latest: >-
-              ${{ needs.setup.outputs.latest_branch == matrix.branch }}
-            name: >
-              opencl-clang linked against LLVM 
-              v${{ steps.versions.outputs.llvm_version }}
-              libraries
-            # TODO: update
-            body: "This release is linked against LLVM \
-              v${{ steps.versions.outputs.llvm_version }}.${{ steps.llvm-spirv-versions.outputs.llvm_patch }} \
-              and SPIR-V LLVM translator \
-              v${{ steps.versions.outputs.llvm_version }}.${{ steps.llvm-spirv-versions.outputs.spirv_patch }}. \
-              Full Changelog: ${{ github.server_url }}/\
-              ${{ github.repository }}/compare/\
-              ${{ steps.versions.outputs.latest_version }}...\
-              v${{ steps.versions.outputs.release_version }}"
+          make_latest: >-
+            ${{ needs.setup.outputs.latest_branch == matrix.branch }}
+          name: >
+            opencl-clang linked against LLVM  v${{ steps.versions.outputs.llvm_version
+            }}
+            libraries
+           # TODO: update
+          body: "This release is linked against LLVM v${{ steps.versions.outputs.llvm_version
+            }}.${{ steps.llvm-spirv-versions.outputs.llvm_patch }} and SPIR-V LLVM
+            translator v${{ steps.versions.outputs.llvm_version }}.${{ steps.llvm-spirv-versions.outputs.spirv_patch
+            }}. Full Changelog: ${{ github.server_url }}/${{ github.repository }}/compare/${{
+            steps.versions.outputs.latest_version }}...v${{ steps.versions.outputs.release_version
+            }}"
+      - name: release Energy Measurement
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: get-measurement
+          label: 'release'
+      - name: Show Energy Results
+        uses: DaxLynch/eco-ci-energy-estimation@main
+        with:
+          task: display-results
